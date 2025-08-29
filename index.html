@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>仙缘录 - 乙女仙侠游戏</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="bg-light min-h-screen font-fantasy text-dark overflow-x-hidden flex flex-col">
+    <!-- 页面加载指示器 -->
+    <div id="loader" class="fixed inset-0 z-50 flex items-center justify-center bg-white">
+        <div class="text-center">
+            <div class="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p class="text-xl text-dark">仙缘录加载中...</p>
+        </div>
+    </div>
+
+    <!-- 顶部导航 -->
+    <header class="bg-white/70 bg-blur border-b border-primary/40 sticky top-0 z-40 hidden">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i class="fa fa-pagelines text-accent text-3xl animate-pulse-slow"></i>
+                <h1 class="text-[clamp(1.8rem,4vw,3rem)] font-bold text-shadow-glow">仙缘录</h1>
+            </div>
+            
+            <!-- 主导航按钮 - PC端优化 -->
+            <nav class="hidden md:flex space-x-4">
+                <button id="map-btn" class="nav-btn flex items-center space-x-2 bg-white/40 border border-primary/40 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all duration-300 text-dark">
+                    <i class="fa fa-map-o text-xl"></i>
+                    <span class="text-lg">地图</span>
+                </button>
+                <button id="profile-btn" class="nav-btn flex items-center space-x-2 bg-white/40 border border-primary/40 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all duration-300 text-dark">
+                    <i class="fa fa-user-o text-xl"></i>
+                    <span class="text-lg">个人</span>
+                </button>
+                <button id="alchemy-btn" class="nav-btn flex items-center space-x-2 bg-white/40 border border-primary/40 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all duration-300 text-dark">
+                    <i class="fa fa-flask text-xl"></i>
+                    <span class="text-lg">炼丹</span>
+                </button>
+                <button id="shop-btn" class="nav-btn flex items-center space-x-2 bg-white/40 border border-primary/40 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all duration-300 text-dark">
+                    <i class="fa fa-shopping-bag text-xl"></i>
+                    <span class="text-lg">商店</span>
+                </button>
+                <button id="characters-btn" class="nav-btn flex items-center space-x-2 bg-white/40 border border-primary/40 rounded-lg px-4 py-2 hover:bg-primary/20 transition-all duration-300 text-dark">
+                    <i class="fa fa-users text-xl"></i>
+                    <span class="text-lg">人物</span>
+                </button>
+            </nav>
+            
+            <div class="flex items-center space-x-5">
+                <div class="flex items-center bg-white/50 rounded-full px-4 py-2">
+                    <i class="fa fa-diamond text-accent mr-2 text-xl"></i>
+                    <span id="gold-count" class="text-lg font-bold">1000</span>
+                </div>
+                <button class="md:hidden text-2xl" id="mobile-menu-btn">
+                    <i class="fa fa-bars"></i>
+                </button>
+            </div>
+        </div>
+        
+        <!-- 移动端菜单 -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white/90 bg-blur">
+            <div class="container mx-auto px-4 py-3 flex flex-col space-y-3">
+                <button id="map-btn-mobile" class="hover:text-primary transition-colors duration-300 flex items-center py-3 px-2">
+                    <i class="fa fa-map-o mr-3 w-6 text-xl"></i> 地图
+                </button>
+                <button id="profile-btn-mobile" class="hover:text-primary transition-colors duration-300 flex items-center py-3 px-2">
+                    <i class="fa fa-user-o mr-3 w-6 text-xl"></i> 个人
+                </button>
+                <button id="alchemy-btn-mobile" class="hover:text-primary transition-colors duration-300 flex items-center py-3 px-2">
+                    <i class="fa fa-flask mr-3 w-6 text-xl"></i> 炼丹
+                </button>
+                <button id="shop-btn-mobile" class="hover:text-primary transition-colors duration-300 flex items-center py-3 px-2">
+                    <i class="fa fa-shopping-bag mr-3 w-6 text-xl"></i> 商店
+                </button>
+                <button id="characters-btn-mobile" class="hover:text-primary transition-colors duration-300 flex items-center py-3 px-2">
+                    <i class="fa fa-users mr-3 w-6 text-xl"></i> 人物
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主内容区 -->
+    <main class="flex-1 container mx-auto px-6 py-8 hidden" id="main-content">
+        <!-- 初始欢迎界面 -->
+        <section id="welcome-screen" class="flex flex-col lg:flex-row items-center justify-center min-h-[80vh] text-center lg:text-left p-4">
+            <div class="w-full lg:w-1/2 mb-10 lg:mb-0 lg:pr-10 order-2 lg:order-1">
+                <h2 class="text-[clamp(2rem,5vw,4rem)] font-bold mb-6 text-shadow-glow">欢迎来到仙缘录</h2>
+                <p class="text-[clamp(1.1rem,2vw,1.5rem)] max-w-2xl mb-8 bg-white/60 bg-blur p-6 rounded-lg leading-relaxed text-dark">你将扮演一位天赋异禀的药修小师姐"灵月"，在仙门中修炼成长。清冷出尘的师尊、腹黑的小师弟，还有神秘莫测的魔尊，谁将与你结下不解仙缘？</p>
+                <button id="start-btn" class="bg-primary hover:bg-primary/80 text-white font-bold py-4 px-10 rounded-full text-xl transition-all duration-300 transform hover:scale-105 shadow-lg">
+                    开始你的仙缘之旅 <i class="fa fa-arrow-right ml-2"></i>
+                </button>
+            </div>
+            
+            <div class="w-full lg:w-1/2 order-1 lg:order-2 flex justify-center">
+                <!-- 立绘区域 -->
+                <img src="https://img.cdn1.vip/i/68b1b902c7a33_1756477698.webp" alt="仙缘录游戏主角灵月" class="rounded-xl shadow-2xl max-h-[70vh] object-cover border-4 border-primary/30 animate-float">
+            </div>
+        </section>
+
+        <!-- 地图界面 -->
+        <section id="map-screen" class="hidden min-h-[80vh]">
+            <!-- 动态生成内容 -->
+        </section>
+
+        <!-- 个人界面 -->
+        <section id="profile-screen" class="hidden min-h-[80vh]">
+            <!-- 动态生成内容 -->
+        </section>
+
+        <!-- 炼丹界面 -->
+        <section id="alchemy-screen" class="hidden min-h-[80vh]">
+            <!-- 动态生成内容 -->
+        </section>
+
+        <!-- 商店界面 -->
+        <section id="shop-screen" class="hidden min-h-[80vh]">
+            <!-- 动态生成内容 -->
+        </section>
+
+        <!-- 人物介绍模块 -->
+        <section id="characters-screen" class="hidden min-h-[80vh]">
+            <!-- 动态生成内容 -->
+        </section>
+
+        <!-- 对话界面 -->
+        <section id="dialog-screen" class="hidden fixed inset-0 z-50 overflow-hidden">
+            <!-- 背景图 -->
+            <div id="dialog-background" class="absolute inset-0 bg-clearday transition-all duration-1000"></div>
+            
+            <!-- 半透明遮罩 -->
+            <div class="absolute inset-0 bg-gradient-to-t from-white/70 via-white/40 to-transparent pointer-events-none"></div>
+            
+            <!-- 悬浮返回按钮 -->
+            <button id="floating-return-btn" class="absolute top-6 left-6 bg-white/90 hover:bg-white border-2 border-primary/50 hover:border-primary text-dark px-5 py-3 rounded-full transition-all duration-300 flex items-center space-x-3 shadow-lg hover:shadow-xl transform hover:scale-105 z-10">
+                <i class="fa fa-arrow-left text-xl"></i>
+                <span class="font-bold text-lg">返回地图</span>
+            </button>
+            
+            <!-- 角色立绘区域 -->
+            <div class="absolute bottom-0 left-0 w-full h-full flex items-end px-10 pb-10">
+                <!-- 左侧角色立绘 -->
+                <div id="left-character" class="w-1/2 flex justify-start">
+                    <!-- 动态加载 -->
+                </div>
+                
+                <!-- 右侧角色立绘 -->
+                <div id="right-character" class="w-1/2 flex justify-end">
+                    <!-- 动态加载 -->
+                </div>
+            </div>
+            
+            <!-- 聊天界面容器 -->
+            <div class="absolute bottom-0 left-0 right-0 bg-white/90 bg-blur border-t border-primary/50 transform transition-transform duration-300 translate-y-0" style="border-radius: 20px 20px 0 0;">
+                <!-- 聊天头部 -->
+                <div class="p-4 border-b border-primary/20 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div id="chat-avatar" class="w-10 h-10 rounded-full border-2 border-primary/70 bg-gradient-to-br from-pink-100 to-pink-200 flex items-center justify-center mr-3">
+                            <i class="fa fa-user text-lg text-primary/70"></i>
+                        </div>
+                        <h3 id="chat-name" class="text-xl font-bold"></h3>
+                    </div>
+                    <div class="flex space-x-3">
+                        <button id="toggle-ai-mode" class="bg-secondary/20 hover:bg-secondary/40 text-secondary px-4 py-2 rounded-full transition-all duration-300 flex items-center space-x-2 border-2 border-secondary/30 hover:border-secondary/50">
+                            <i class="fa fa-robot text-xl"></i>
+                            <span class="font-bold">AI对话</span>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 聊天消息区域 -->
+                <div id="message-container" class="p-4 max-h-[60vh] overflow-y-auto space-y-4">
+                    <!-- 动态加载 -->
+                </div>
+                
+                <!-- 输入区域 -->
+                <div class="p-4 border-t border-primary/20">
+                    <!-- 快捷回复 -->
+                    <div class="flex flex-wrap gap-2 mb-3">
+                        <button class="quick-reply bg-primary/10 hover:bg-primary/20 text-dark px-3 py-1 rounded-full text-sm transition-colors">
+                            师尊今日似乎心情不错
+                        </button>
+                        <button class="quick-reply bg-primary/10 hover:bg-primary/20 text-dark px-3 py-1 rounded-full text-sm transition-colors">
+                            这株草药您认识吗？
+                        </button>
+                        <button class="quick-reply bg-primary/10 hover:bg-primary/20 text-dark px-3 py-1 rounded-full text-sm transition-colors">
+                            弟子还有很多要学习的地方
+                        </button>
+                    </div>
+                    
+                    <!-- 输入框和发送按钮 -->
+                    <div class="flex gap-2">
+                        <input type="text" id="player-input" placeholder="输入你想说的话..." class="flex-1 bg-white border border-primary/30 rounded-full px-4 py-3 text-dark focus:outline-none focus:border-primary">
+                        <button id="send-message" class="bg-primary hover:bg-primary/80 text-white font-bold p-3 rounded-full transition-all duration-300">
+                            <i class="fa fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- 通知提示 -->
+        <div id="notification" class="fixed top-20 right-4 bg-white border border-primary/50 rounded-lg p-4 shadow-lg transform transition-all duration-500 translate-x-full max-w-xs z-40">
+            <h4 class="font-bold mb-1 flex items-center">
+                <i class="fa fa-info-circle text-accent mr-2"></i> 提示
+            </h4>
+            <p id="notification-text" class="text-sm">操作成功！</p>
+        </div>
+    </main>
+
+    <footer class="bg-white/60 bg-blur border-t border-primary/30 py-4 mt-8 hidden" id="footer">
+        <div class="container mx-auto px-4 text-center text-dark/70 text-sm">
+            <p>仙缘录-乙女仙侠游戏</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript 文件 -->
+    <script src="config.js"></script>
+    <script src="gameData.js"></script>
+    <script src="deepseek.js"></script>
+    <script src="ui.js"></script>
+    <script src="game.js"></script>
+    <script src="events.js"></script>
+    <script src="main.js"></script>
+</body>
+</html>

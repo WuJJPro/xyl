@@ -145,9 +145,17 @@ function showVisualDialog(characterId, location) {
         chatName.textContent = character.name;
     }
     
-    // 添加初始对话
-    const randomText = character.texts[Math.floor(Math.random() * character.texts.length)];
-    addMessage(randomText, 'other', characterId);
+    // 检查是否有可用的剧情对话
+    const availableDialogues = getAvailableDialogues(characterId, location);
+    if (availableDialogues.length > 0 && !gameState.aiMode) {
+        // 显示剧情对话
+        const dialogue = availableDialogues[0]; // 选择第一个可用对话
+        playStoryDialogue(dialogue, characterId);
+    } else {
+        // 显示普通对话
+        const randomText = character.texts[Math.floor(Math.random() * character.texts.length)];
+        addMessage(randomText, 'other', characterId);
+    }
     
     // 显示对话屏幕
     screens.dialog.classList.remove('hidden');
@@ -227,5 +235,173 @@ function buyItem(itemName, price) {
         showNotification(`成功购买 ${itemName}！`);
     } else {
         showNotification('金币不足，无法购买！');
+    }
+}
+
+// 播放剧情对话
+function playStoryDialogue(dialogue, characterId) {
+    gameState.currentDialogue = dialogue;
+    gameState.dialogueIndex = 0;
+    gameState.inStoryDialogue = true;
+    
+    // 标记对话已看
+    if (dialogue.id) {
+        markDialogueSeen(dialogue.id);
+    }
+    
+    // 禁用输入
+    document.getElementById('player-input').disabled = true;
+    document.getElementById('send-message').disabled = true;
+    
+    // 显示对话内容
+    showNextDialogueLine();
+}
+
+// 显示下一句对话
+function showNextDialogueLine() {
+    const dialogue = gameState.currentDialogue;
+    if (!dialogue || gameState.dialogueIndex >= dialogue.dialogue.length) {
+        // 对话结束，检查是否有选项
+        if (dialogue && dialogue.choices) {
+            showDialogueChoices(dialogue.choices);
+        } else if (dialogue && dialogue.result) {
+            // 应用对话结果
+            applyDialogueResult(dialogue.result);
+            // 恢复输入
+            gameState.inStoryDialogue = false;
+            document.getElementById('player-input').disabled = false;
+            document.getElementById('send-message').disabled = false;
+        } else {
+            // 对话结束，恢复输入
+            gameState.inStoryDialogue = false;
+            document.getElementById('player-input').disabled = false;
+            document.getElementById('send-message').disabled = false;
+        }
+        return;
+    }
+    
+    const line = dialogue.dialogue[gameState.dialogueIndex];
+    
+    // 根据说话者添加消息
+    if (line.speaker === 'player') {
+        addMessage(line.text, 'player');
+    } else {
+        addMessage(line.text, 'other', gameState.currentCharacter);
+    }
+    
+    gameState.dialogueIndex++;
+    
+    // 1.5秒后显示下一句
+    setTimeout(() => {
+        showNextDialogueLine();
+    }, 1500);
+}
+
+// 显示对话选项
+function showDialogueChoices(choices) {
+    const inputArea = document.querySelector('#dialog-screen .p-4.border-t');
+    
+    // 隐藏输入框和快捷回复
+    document.getElementById('player-input').style.display = 'none';
+    document.getElementById('send-message').style.display = 'none';
+    const quickReplyContainer = document.querySelector('#dialog-screen .flex.flex-wrap.gap-2.mb-3');
+    if (quickReplyContainer) {
+        quickReplyContainer.style.display = 'none';
+    }
+    
+    // 创建选项按钮容器
+    const choiceContainer = document.createElement('div');
+    choiceContainer.className = 'space-y-3';
+    choiceContainer.id = 'dialogue-choices';
+    
+    choices.forEach((choice, index) => {
+        const button = document.createElement('button');
+        button.className = 'w-full bg-primary/20 hover:bg-primary/40 text-dark py-3 px-6 rounded-lg transition-all duration-300 text-left';
+        button.textContent = `${index + 1}. ${choice.text}`;
+        button.onclick = () => selectDialogueChoice(choice);
+        choiceContainer.appendChild(button);
+    });
+    
+    inputArea.appendChild(choiceContainer);
+}
+
+// 选择对话选项
+function selectDialogueChoice(choice) {
+    // 移除选项按钮
+    const choiceContainer = document.getElementById('dialogue-choices');
+    if (choiceContainer) {
+        choiceContainer.remove();
+    }
+    
+    // 恢复输入界面
+    document.getElementById('player-input').style.display = '';
+    document.getElementById('send-message').style.display = '';
+    const quickReplyContainer = document.querySelector('#dialog-screen .flex.flex-wrap.gap-2.mb-3');
+    if (quickReplyContainer) {
+        quickReplyContainer.style.display = '';
+    }
+    
+    // 恢复输入功能（如果没有后续对话）
+    if (!choice.nextDialogue) {
+        gameState.inStoryDialogue = false;
+        document.getElementById('player-input').disabled = false;
+        document.getElementById('send-message').disabled = false;
+    }
+    
+    // 添加玩家选择的对话
+    addMessage(choice.text, 'player');
+    
+    // 应用好感度变化
+    if (choice.affectionChange) {
+        const characterMap = {
+            'master': '师尊',
+            'junior': '师弟',
+            'demon': '魔尊'
+        };
+        const characterName = characterMap[gameState.currentCharacter];
+        if (characterName) {
+            gameState.好感度[characterName] += choice.affectionChange;
+            showNotification(`${characters[gameState.currentCharacter].name} 好感度 ${choice.affectionChange > 0 ? '+' : ''}${choice.affectionChange}`);
+        }
+    }
+    
+    // 如果有后续对话，播放它
+    if (choice.nextDialogue) {
+        const nextDialogue = dialogues[gameState.currentCharacter][choice.nextDialogue];
+        if (nextDialogue) {
+            setTimeout(() => {
+                playStoryDialogue(nextDialogue, gameState.currentCharacter);
+            }, 1000);
+        }
+    }
+}
+
+// 应用对话结果
+function applyDialogueResult(result) {
+    // 好感度变化
+    if (result.affectionChange) {
+        const characterMap = {
+            'master': '师尊',
+            'junior': '师弟',
+            'demon': '魔尊'
+        };
+        const characterName = characterMap[gameState.currentCharacter];
+        if (characterName) {
+            gameState.好感度[characterName] += result.affectionChange;
+            showNotification(`${characters[gameState.currentCharacter].name} 好感度 ${result.affectionChange > 0 ? '+' : ''}${result.affectionChange}`);
+        }
+    }
+    
+    // 解锁内容
+    if (result.unlock) {
+        unlockContent(result.unlock);
+        showNotification(`解锁了新内容: ${result.unlock}`);
+    }
+    
+    // 获得物品
+    if (result.item) {
+        if (!gameState.inventory) gameState.inventory = [];
+        gameState.inventory.push(result.item);
+        showNotification(`获得了物品: ${result.item}`);
     }
 }
